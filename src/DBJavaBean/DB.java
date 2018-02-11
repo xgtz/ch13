@@ -9,6 +9,8 @@ import javax.swing.JOptionPane;
 
 import org.apache.struts2.interceptor.ServletRequestAware;
 
+import JavaBean.MyDayBean;
+import JavaBean.MyFileBean;
 import JavaBean.MyFriBean;
 import JavaBean.MyMessBean;
 
@@ -350,45 +352,191 @@ public class DB implements ServletRequestAware {
 	}
 	// 修改日程
 	public String updateDay(HttpServletRequest request,String userName,String day,String date,String thing){
-		return null;
+		String sure=null;
+		String del=deleteDay(request,userName,day);
+		if(del.equals("ok")){
+			String in = insertDay(request,userName,date,thing);
+			if(in.equals("ok")){
+				String result=myDayTime(request,userName);
+				if(result.equals("ok")){
+					sure="ok";
+				}
+			}
+		}
+		return sure;
 	}
 	// 查询日程
 	public ResultSet selectDay(HttpServletRequest request,String userName,String date){
+		String sql="select * from date where userName='"+userName+"' and date='"+date+"'";
+		st=getStatement();
+		try {
+			return st.executeQuery(sql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return null;
+		
 	}
 	// 查询所有日程信息
 	public ResultSet selectDayAll(HttpServletRequest request,String userName){
+		String sql="select * from date where userName='"+userName+"'";
+		st=getStatement();
+		try {
+			return st.executeQuery(sql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return null;
 	}
 	// 查询所有日程信息，并把它们保存到session中
 	public String myDayTime(HttpServletRequest request,String userName){
+		ArrayList listName=null;
+		HttpSession session=request.getSession();
+		listName=new ArrayList();
+		rs=selectDayAll(request,userName);
+		try {
+			if(rs.next())
+			{
+				rs=selectDayAll(request,userName);
+				while(rs.next()){
+					MyDayBean bean=new MyDayBean(); 
+					bean.setDay(rs.getString("date"));
+					bean.setThing(rs.getString("thing"));
+					listName.add(bean);
+					session.setAttribute("day", listName);
+				}
+			}
+			else{
+				session.setAttribute("day", listName);
+			}
+			return "ok";
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
 		return null;
 	}
 	// 保存上传的文件信息
 	public String insertFile(HttpServletRequest request,String userName,String title,String name,
 			String contentType,String size,String filePath){
-		return null;
+		String sure=null;
+		rs=selectFile(request,userName,"title",title);
+		try {
+			if(rs.next()){
+				sure="title";
+			}
+			else{
+				rs=selectFile(request,userName,"name",name);
+				if(rs.next()){
+					
+					sure="name";
+				}
+				else{
+					String sql="insert into file (userName,title,name,contentType,size,filePath) values "
+							+ "('"+userName+"','"+title+"', '"+name+"','"+contentType+"',"
+									+ "'"+size+"','"+filePath+"')";
+					st=getStatement();
+					int row=st.executeUpdate(sql);
+					if(row==1){
+						String file=myFile(request,userName);
+						if(file.equals("ok")){
+							sure="ok";
+						}
+					}
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return sure;
 	}
 	// 删除文件信息
 	public String deleteFile(HttpServletRequest request,String userName,String title){
-		return null;
+		String sure=null;
+		String sql="delete from file where userName='"+userName+"' and title='"+title+"' ";
+		st=getStatement();
+		int row;
+		try {
+			row = st.executeUpdate(sql);
+			if(row==1){
+				String file=myFile(request,userName);
+				if(file.equals("ok")){
+					sure="ok";
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return sure;
 	}
 	// 修改文件
 	public String updateFile(HttpServletRequest request,String userName,String title,String name,
 			String contentType,String size,String filePath){
-		return null;
+		String sure=null;
+		String del=deleteFile(request,userName,title);
+		if(del.equals("ok")){
+			String in=insertFile(request,userName,title,name,contentType,size,filePath);
+			if(in.equals("ok")){
+				String file=myFile(request,userName);
+				if(file.endsWith("ok")){
+					sure="ok";
+				}
+			}
+		}
+		return sure;
 	}
 	// 查询文件
 	public ResultSet selectFile(HttpServletRequest request,String userName,String type,String name){
+		String sql="select * from file where userName='"+userName+"' "
+				+ " and contentType='"+type+"' and name='"+name+"' ";
+		st=getStatement();
+		try {
+			return st.executeQuery(sql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return null;
 	}
 	// 查询所有文件
 	public ResultSet selectFileAll(HttpServletRequest request,String userName){
+		String sql="select * from file where userName='"+userName+"' ";
+		st=getStatement();
+		try {
+			return st.executeQuery(sql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return null;
 	}
 	// 查询所有的文件信息，并把它们保存到session中
 	public String myFile(HttpServletRequest request,String userName){
-		return null;
+		ArrayList listName=null;
+		HttpSession session=request.getSession();
+		listName=new ArrayList();
+		rs=selectFileAll(request,userName);
+		try {
+			if(rs.next())
+			{
+				rs=selectFileAll(request,userName);
+				while(rs.next())
+				{
+					MyFileBean bean=new MyFileBean();
+					bean.setTitle(rs.getString("title"));
+					bean.setName(rs.getString("name"));
+					bean.setContentType(rs.getString("contentType"));
+					bean.setSize(rs.getString("size"));
+					bean.setFilePath(rs.getString("filePath"));
+					listName.add(bean);
+					session.setAttribute("file", listName);
+				}
+			}
+			else{
+				session.setAttribute("file", listName);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return "ok";
 	}
 	// 查询登录用户名和密码是否正确
 	public ResultSet selectLogin(HttpServletRequest request,String userName,String password){
