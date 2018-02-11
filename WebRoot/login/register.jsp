@@ -69,7 +69,7 @@
 	  			</tr>
 	  			<tr>
 	  				<td>
-	  					<s:select name="word" label="用户职称" headerValue="-----请选择-----" headerKey="1"
+	  					<s:select name="work" label="用户职称" headerValue="-----请选择-----" headerKey="1"
 	  					list="{'测试','开发','设计','教师','职员','经理','老板','其他'}"></s:select>
 	  				</td>
 	  			</tr>
