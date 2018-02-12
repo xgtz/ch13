@@ -13,6 +13,7 @@ import JavaBean.MyDayBean;
 import JavaBean.MyFileBean;
 import JavaBean.MyFriBean;
 import JavaBean.MyMessBean;
+import JavaBean.UserNameBean;
 
 // 以IOC方式直接访问Servlet,通过request获取session
 public class DB implements ServletRequestAware {
@@ -540,50 +541,235 @@ public class DB implements ServletRequestAware {
 	}
 	// 查询登录用户名和密码是否正确
 	public ResultSet selectLogin(HttpServletRequest request,String userName,String password){
+		String sql="select * from user where userName='"+userName+"' and password='"+password+"'";
+		st=getStatement();
+		try {
+			return st.executeQuery(sql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return null;
 	}
 	// 把登陆的用户信息保存到session中
 	public String myLogin(HttpServletRequest request,String userName){
+		ArrayList listName=null;
+		HttpSession session=request.getSession();
+		listName=new ArrayList();
+		rs=this.selectMess(request, userName);
+		try {
+			if(rs.next()){
+				rs=selectMess(request,userName);
+				while(rs.next()){
+					UserNameBean mess=new UserNameBean();
+					mess.setUserName(rs.getString("userName"));
+					mess.setPassoword(rs.getString("password"));
+					listName.add(mess);
+					session.setAttribute("userName", listName);
+				}
+			}
+			else{
+				session.setAttribute("userName", listName);
+			}
+			return "ok";
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return null;
 	}
 	// 返回登录用户的用户名
 	public String returnLogin(HttpServletRequest request){
-		return null;
+		String LoginName=null;
+		HttpSession session=request.getSession();
+		ArrayList login=(ArrayList) session.getAttribute("userName");
+		if(login==null || login.size()==0){
+			LoginName=null;
+		}
+		else{
+			for(int i=login.size()-1;i>=0;i--){
+				UserNameBean nm=(UserNameBean) login.get(i);
+				LoginName=nm.getUserName();
+			}
+		}
+		return LoginName;
 	}
 	
 	/*调用myLogin(),myMessage(),myFriends(),myDateTime(),myFile()方法，把所有和用户
 	有关的信息全部保存到session对象中，该方法登录成功后调用*/
 	public String addList(HttpServletRequest request,String userName){
-		return null;
+		String sure=null;
+		String login=this.myLogin(request, userName);
+		String mess=this.myMessage(request, userName);
+		String fri=this.myFriends(request, userName);
+		String day=this.myDayTime(request, userName);
+		String file=this.myFile(request, userName);
+		if(login.equals("ok") && mess.equals("ok") && fri.equals("ok") 
+				&& day.equals("ok") && file.equals("ok")){
+			sure="ok";
+		}
+		return sure;
 	}
 	
 	// 修改用户密码
 	public String updatePass(HttpServletRequest request,String userName,String password){
-		return null;
+		String sure=null;
+		String sql="update user set password='"+password+"' where userName='"+userName+"'";
+		st=getStatement();
+		int row;
+		try {
+			row = st.executeUpdate(sql);
+			if(row==1){
+				String mess=this.myLogin(request, userName);
+				if(mess.equals("ok")){
+					sure="ok";
+				}
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return sure;
+		
 	}
 	//查找联系人，并将其信息保存到session中
 	public String findFri(HttpServletRequest request,String userName,String name){
+		ArrayList listName=null;
+		HttpSession session=request.getSession();
+		listName=new ArrayList();
+		rs=this.selectFri(request, userName, name);
+		try {
+			if(rs.next()){
+				rs=selectFri(request,userName,name);
+				while(rs.next()){
+					MyFriBean mess=new MyFriBean();
+					mess.setName(rs.getString("name"));
+					mess.setPhone(rs.getString("phone"));
+					mess.setEmail(rs.getString("email"));
+					mess.setWorkplace(rs.getString("workplace"));
+					mess.setPlace(rs.getString("place"));
+					mess.setQQ(rs.getString("QQ"));
+					listName.add(mess);
+					session.setAttribute("findfriend", listName);
+					
+				}
+			}
+			else{
+				session.setAttribute("findfriend", listName);
+			}
+			return "ok";
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return null;
 	}
 	// 从查找到的联系人session中获取联系人姓名并返回
 	public String returnFri(HttpServletRequest request){
-		return null;
+		String FriendName=null;
+		HttpSession session=request.getSession();
+		ArrayList login=(ArrayList) session.getAttribute("findfriend");
+		if(login==null || login.size()==0){
+			FriendName=null;
+		}else{
+			for(int i=login.size()-1;i>=0;i--){
+				MyFriBean nm=(MyFriBean) login.get(i);
+				FriendName=nm.getName();
+			}
+		}
+		return FriendName;
 	}
 	// 查找日程，并把日程信息保存到session中
 	public String findDay(HttpServletRequest request,String userName,String date){
+		ArrayList listName=null;
+		HttpSession session =request.getSession();
+		listName=new ArrayList();
+		rs=this.selectDay(request, userName, date);
+		try {
+			if(rs.next()){
+				rs=this.selectDay(request, userName, date);
+				while(rs.next()){
+					MyDayBean mess=new MyDayBean();
+					mess.setDay(rs.getString("date"));
+					mess.setThing(rs.getString("thing"));
+					listName.add(mess);
+					session.setAttribute("findday", listName);
+				}
+			}
+			else{
+				session.setAttribute("findday", listName);
+			}
+			return "ok";
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return null;
 	}
 	// 从查找到的session中获取日程信息,并返回
 	public String returnDay(HttpServletRequest request){
-		return null;
+		String date=null;
+		HttpSession session=request.getSession();
+		ArrayList login=(ArrayList) session.getAttribute("findday");
+		if(login==null || login.size()==0){
+			date=null;
+		}
+		else{
+			for(int i=login.size()-1;i>=0;i--){
+				MyDayBean nm=(MyDayBean) login.get(i);
+				date=nm.getDay();
+			}
+		}
+		return date;
 	}
 	// 查找文件信息，并把文件的信息保存到session中
 	public String findFile(HttpServletRequest request,String userName,String title){
+		ArrayList listName=null;
+		HttpSession session=request.getSession();
+		listName=new ArrayList();
+		rs=this.selectFile(request, userName, "title", title);
+		try {
+			if(rs.next()){
+				rs=this.selectFile(request, userName, "title", title);
+				while(rs.next()){
+					MyFileBean mess=new MyFileBean();
+					mess.setTitle(rs.getString("title"));
+					mess.setName(rs.getString("name"));
+					mess.setContentType(rs.getString("contentType"));
+					mess.setSize(rs.getString("size"));
+					mess.setFilePath(rs.getString("filePath"));
+					listName.add(mess);
+					session.setAttribute("findfile", listName);
+				}
+			}else{
+				session.setAttribute("findfile", listName);
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return null;
 	}
 	//根据不同的条件，从查找的文件session中获取相应的文件信息
 	public String returnFile(HttpServletRequest request,String face){
-		return null;
+		String file=null;
+		HttpSession session=request.getSession();
+		ArrayList login=(ArrayList) session.getAttribute("findfile");
+		if(null==login || login.size()==0){
+			file=null;
+		}
+		else{
+			for(int i=login.size()-1;i>=0;i--){
+				MyFileBean nm=(MyFileBean) login.get(i);
+				if(face.endsWith("title")){
+					file=nm.getTitle();
+				}
+				else if(face.equals("filePath")){
+					file=nm.getFilePath();
+				}
+				else if(face.equals("fileName")){
+					file=nm.getName();
+				}
+			}
+		}
+		return file;
 	}
 	// 一个带参数的信息提示框，供调试使用
 	public void message(String msg){
